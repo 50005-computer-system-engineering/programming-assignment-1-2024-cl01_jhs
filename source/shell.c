@@ -169,8 +169,6 @@ int list_env(char **args)
 }
 
 // Handler for the 'setenv' command
-// Handler for the 'setenv' command
-// Handler for the 'setenv' command
 int set_env_var(char **args)
 {
     if (args[1] == NULL)
@@ -326,8 +324,25 @@ int readrc()
     fclose(file); // Close the file
     return EXIT_SUCCESS;
 }
-
-
+// Sustainibility : Resource Usage 
+void print_resource_usage() {
+    struct rusage usage;
+    if (getrusage(RUSAGE_CHILDREN, &usage) == 0) {
+        printf("\nResource Usage:\n");
+        printf("CPU Time:\n");
+        printf("  User CPU time used: %ld.%06ld seconds\n", usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
+        printf("  System CPU time used: %ld.%06ld seconds\n", usage.ru_stime.tv_sec, usage.ru_stime.tv_usec);
+        
+        printf("Memory Usage:\n");
+        printf("  Maximum resident set size: %ld KB\n", usage.ru_maxrss);
+        
+        printf("Disk I/O:\n");
+        printf("  Block input operations: %ld\n", usage.ru_inblock);
+        printf("  Block output operations: %ld\n", usage.ru_oublock);
+    } else {
+        perror("getrusage");
+    }
+}
 
 
 
@@ -421,6 +436,8 @@ int main(void)
                     else
                     {
                         printf("Child process exited with status %d\n", child_exit_status);
+                        // Print resource usage after the child process has exited
+                        print_resource_usage();
                     }
                 }
             }
