@@ -64,6 +64,17 @@ backup.c - Creates a zip archive of the directory specified by the BACKUP_DIR en
 
 
 ## Additional Functions
+1. Decorate the Prompt :
+Decorating the shell prompt involves enhancing the appearance and informational content displayed when the user is prompted to enter a command. The prompt decoration is handled by type_prompt function which displays useful information like the current user, hostname ,current working directory and the current time.
+
+Example : 
+![image](https://github.com/50005-computer-system-engineering/programming-assignment-1-2024-cl01_jhs/assets/140350660/c4dac3b4-67e1-404f-b3b1-fa4e2d6d5569)
+
+2. Command History configuration :
+Command history is a crucial feature for any shell, keeping the record of all commands entered by the user and displaying the history of entered commands.
+
+Example : 
+![image](https://github.com/50005-computer-system-engineering/programming-assignment-1-2024-cl01_jhs/assets/140350660/476de43b-4041-4b76-953e-20e5450dfd17)
 
 ## Sustainability Idea: Resource Usage Feedback
 
