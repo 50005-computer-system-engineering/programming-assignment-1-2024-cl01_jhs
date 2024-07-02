@@ -1,33 +1,35 @@
+#include "system_program.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define CMD_BUFFER_SIZE 1024
-#define RESULT_BUFFER_SIZE 4096
+#define COMMAND "ps -efj | grep dspawn | grep -Ev 'tty|pts' "
 
-int main() {
-    char cmd[CMD_BUFFER_SIZE];
-    char result[RESULT_BUFFER_SIZE];
+int main()
+{
+    char buffer[128];
+    int count = 0;
     FILE *fp;
 
-    // Command to get the count of live dspawn daemons
-    snprintf(cmd, sizeof(cmd), "ps -ef | grep dspawn | grep -Ev 'tty|pts' | grep -v grep | wc -l");
-
     // Open the command for reading
-    fp = popen(cmd, "r");
-    if (fp == NULL) {
-        perror("popen");
-        return 1;
+    fp = popen(COMMAND, "r");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "Failed to run command\n");
+        exit(EXIT_FAILURE);
     }
 
-    // Read the output
-    if (fgets(result, sizeof(result) - 1, fp) != NULL) {
-        printf("Number of live dspawn daemons: %s", result);
+    // Read the output a line at a time and count the lines
+    while (fgets(buffer, sizeof(buffer), fp) != NULL)
+    {
+        count++;
     }
 
     // Close the command stream
     pclose(fp);
 
-    return 0;
+    printf("Number of live dspawn daemon processes: %d\n", count);
+
+    return EXIT_SUCCESS;
 }
 
