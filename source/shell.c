@@ -209,7 +209,7 @@ int set_env_var(char **args)
     }
     return 1;
 }
-
+//function to print resource usage of child processes 
 void print_resource_usage() {
     struct rusage usage;
     if (getrusage(RUSAGE_CHILDREN, &usage) == 0) {
@@ -229,9 +229,6 @@ void print_resource_usage() {
     }
 }
 
-
-
-
 // Handler for the 'unsetenv' command
 int unset_env_var(char **args)
 {
@@ -249,7 +246,7 @@ int unset_env_var(char **args)
     return 1;
 }
 
-
+//History functionality 
 #define HISTORY_SIZE 100
 char *history[HISTORY_SIZE];
 int history_count = 0;
@@ -280,7 +277,7 @@ int shell_history(char **args)
     return 1;
 }
 
-
+//function to read commands from a .cseshellrc file 
 int readrc()
 {   
     char line[MAX_LINE];
@@ -346,13 +343,6 @@ int readrc()
     fclose(file); // Close the file
     return EXIT_SUCCESS;
 }
-
-
-
-
-
-
-
 
 
 // The main function where the shell's execution begins
