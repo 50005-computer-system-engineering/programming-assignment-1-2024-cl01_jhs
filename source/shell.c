@@ -1,4 +1,7 @@
 #include "shell.h"
+#include <time.h>
+#include <unistd.h>
+
 
 // Function to read a command from the user input
 void read_command(char **cmd)
@@ -45,16 +48,24 @@ void type_prompt()
     static int first_time = 1;
     if (first_time)
     {
-#ifdef _WIN32
-        system("cls");
-#else
-        system("clear");
-#endif
-        first_time = 0;
+    
+  //Additional feature implementation - Decoration of prompt
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        // Get current time
+        time_t t = time(NULL);
+        struct tm tm = *localtime(&t);
+        // Get current user
+        struct passwd *pw = getpwuid(getuid());
+        char *user = pw ? pw->pw_name : "unknown";
+
+        printf("[%s@%s %02d:%02d:%02d %s]$$ ", user, cwd, tm.tm_hour, tm.tm_min, tm.tm_sec, cwd);
+    } else {
+        perror("getcwd");
     }
     fflush(stdout);
-    printf("$$ ");
-}
+
+    }}
 
 // Handler for the 'cd' command
 int shell_cd(char **args)
@@ -218,85 +229,215 @@ int unset_env_var(char **args)
     return 1;
 }
 
+
+#define HISTORY_SIZE 100
+char *history[HISTORY_SIZE];
+int history_count = 0;
+
+void add_to_history(char *cmd) {
+    if (history_count < HISTORY_SIZE) {
+        history[history_count++] = strdup(cmd);
+    } else {
+        // Shift history to make room for new command
+        free(history[0]);
+        for (int i = 1; i < HISTORY_SIZE; i++) {
+            history[i - 1] = history[i];
+        }
+        history[HISTORY_SIZE - 1] = strdup(cmd);
+    }
+}
+
+void show_history() {
+    for (int i = 0; i < history_count; i++) {
+        printf("%d: %s\n", i + 1, history[i]);
+    }
+}
+
+// Handler for the 'history' command
+int shell_history(char **args)
+{
+    show_history();
+    return 1;
+}
+
+
+int readrc()
+{   
+    char line[MAX_LINE];
+    const char *filePath = ".cseshellrc"; // Specify the path to your text file
+
+    FILE *file = fopen(filePath, "r");
+    if (file == NULL)
+    {
+        perror("Failed to open file");
+        return EXIT_FAILURE;
+    }
+    while (fgets(line, sizeof(line), file))
+    {
+        // Skip empty lines
+        if (line[0] == '\n' || line[0] == '\r')
+            continue;
+
+        // Remove trailing newline character
+        line[strcspn(line, "\n")] = 0;
+        line[strcspn(line, "\r")] = 0;
+
+        char *args[MAX_ARGS]; 
+        char *command_point;
+        int i = 0;
+
+        command_point = strtok(line, " \n");
+
+        while (command_point != NULL)
+        {
+            args[i++] = command_point;  // Duplicate the token and store it
+            command_point = strtok(NULL, " \n");
+        }
+        args[i] = NULL;
+
+        if (args[0] == NULL) continue;
+
+        if (strncmp(args[0], "PATH", 4) == 0)
+        {
+            set_env_var(args);
+        }
+        else
+        {
+            pid_t pid = fork();
+            if (pid == -1)
+            {
+                perror("fork failed");
+                _exit(EXIT_FAILURE);
+            }
+            else if (pid == 0)
+            {
+                execvp(args[0], args);
+                printf("cseshell: command not found: %s\n", args[0]);
+                _exit(EXIT_SUCCESS); // Exit child process
+            }
+            else
+            {
+                // Parent process
+                int status;
+                waitpid(pid, &status, 0); // Wait for child process to finish
+            }
+        }
+    }
+    fclose(file); // Close the file
+    return EXIT_SUCCESS;
+}
+
+
+
+
+
 // The main function where the shell's execution begins
 int main(void)
 {
+    // Define an array to hold the command and its arguments
     char *cmd[MAX_ARGS];
-    int status;
+    int child_status;
 
-    // Get the initial working directory
-    char initial_cwd[PATH_MAX];
-    if (getcwd(initial_cwd, sizeof(initial_cwd)) == NULL)
-    {
-        perror("getcwd");
-        exit(1);
-    }
+    readrc();
 
-    do
-    {
-        type_prompt();
-        read_command(cmd);
+    
+    pid_t pid;
 
+
+    // Move cwd declaration outside the if block
+    char cwd[1024]; // Current working directory
+
+    while (1) // Infinite loop
+    { 
+        type_prompt();     // Display the prompt
+        read_command(cmd); // Read a command from the user
+
+        // If the command is empty, skip execution
         if (cmd[0] == NULL)
-        {
             continue;
-        }
 
+        // Check if the command is a built-in command
         int is_builtin = 0;
         for (int i = 0; i < num_builtin_functions(); i++)
         {
             if (strcmp(cmd[0], builtin_commands[i]) == 0)
             {
-                status = (*builtin_command_func[i])(cmd);
                 is_builtin = 1;
+                if ((*builtin_command_func[i])(cmd) == 0)
+                {
+                    return 0; // Exit the shell
+                }
                 break;
             }
         }
 
+        // If the command is not a built-in, execute it
         if (!is_builtin)
         {
-            pid_t pid = fork();
-            if (pid < 0)
+            // Formulate the full path of the command to be executed
+            char full_path[PATH_MAX];
+            if (getcwd(cwd, sizeof(cwd)) != NULL)
             {
-                perror("fork failed");
-                exit(1);
-            }
-            if (pid == 0)
-            {
-                char full_path[PATH_MAX];
-                char cwd[1024];
-                if (getcwd(cwd, sizeof(cwd)) != NULL)
-                {
-                    char full_path[PATH_MAX];
-                    snprintf(full_path, sizeof(full_path), "%s/source/system_programs/%s", initial_cwd, cmd[0]);
-                    printf("Trying to execute: %s\n", full_path); // Debug print
-                    execv(full_path, cmd);
-                    perror("execv");
-                    exit(1);
-                }
-                else
-                {
-                    printf("Failed to get current working directory.");
-                }
-                exit(1);
+                snprintf(full_path, sizeof(full_path), "%s/bin/%s", cwd, cmd[0]);
             }
             else
             {
-                waitpid(pid, &status, 0);
-                if (WIFEXITED(status))
+                printf("Failed to get current working directory.");
+                exit(1);
+            }
+
+            ////////////////////////////////////////////////////////////
+            // Fork the shell process and execv in child process
+            pid = fork();
+            // printf("pid: %d\n", pid);
+
+            if (pid == 0) // Child process
+            {
+                execv(full_path, cmd);
+
+                // If execv returns, command execution has failed
+                printf("Command %s not found\n", cmd[0]);
+                exit(1);
+            }
+            else if (pid > 0) //Parent process
+            {
+                pid_t waited_pid = waitpid(pid, &child_status, WUNTRACED); 
+                // waitpid(pid, *status, options) system call: wait until a child specified by pid argument has changed state.
+                // wait(*status) system call: wait until one of its children terminates.
+                if (waited_pid == -1)
                 {
-                    int exit_status = WEXITSTATUS(status);
-                    printf("Child process exited with status %d\n", exit_status);
+                    perror("waitpid failed");
+                    exit(1);
+                }
+
+                // Inspect the child's exit status
+                if (WIFEXITED(child_status))
+                {
+                    int child_exit_status = WEXITSTATUS(child_status);
+                    if (child_exit_status == 0)
+                    {
+                        printf("Child process exited successfully\n");
+                    }
+                    else
+                    {
+                        printf("Child process exited with status %d\n", child_exit_status);
+                    }
                 }
             }
+            else
+            {
+                printf("Failed to fork process.\n");
+                exit(1);
+            }
+            ////////////////////////////////////////////////////////
         }
 
+        // Free the allocated memory for the command arguments before exiting
         for (int i = 0; cmd[i] != NULL; i++)
         {
             free(cmd[i]);
         }
-    } while (status);
-
+        memset(cwd, '\0', sizeof(cwd)); // clear the cwd array
+    }
     return 0;
 }
-
