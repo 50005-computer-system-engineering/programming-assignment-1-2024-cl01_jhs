@@ -14,73 +14,31 @@
 
 char output_file_path[PATH_MAX];
 
-static int create_daemon()
-{
-    pid_t pid;
-
-    // Step 1: Fork the parent process
-    pid = fork();
-
-    if (pid < 0)
-        exit(EXIT_FAILURE);
-
-    // Step 2: Exit the parent process
-    if (pid > 0)
-        exit(EXIT_SUCCESS);
-
-    // Step 3: On child process (intermediate process), call setsid() to lose controlling TTY
-    if (setsid() < 0)
-        exit(EXIT_FAILURE);
-
-    // Step 4: Ignore SIGCHLD and SIGHUP
-    signal(SIGCHLD, SIG_IGN);
-    signal(SIGHUP, SIG_IGN);
-
-    // Step 5: Fork again, parent (intermediate) process terminates
-    pid = fork();
-
-    if (pid < 0)
-        exit(EXIT_FAILURE);
-
-    if (pid > 0)
-        exit(EXIT_SUCCESS);
-
-    // Step 6: Set new file permissions
-    umask(0);
-
-    // Step 7: Change the working directory to root
-    if (chdir("/") < 0)
-        exit(EXIT_FAILURE);
-
-    // Step 8: Close all open file descriptors
-    int x;
-    for (x = sysconf(_SC_OPEN_MAX); x >= 0; x--)
-    {
-        close(x);
-    }
-
-    // Attach file descriptors 0, 1, and 2 to /dev/null
-    open("/dev/null", O_RDWR); // stdin
-    dup(0); // stdout
-    dup(0); // stderr
-
-    return 0;
-}
-
-
 static int daemon_work()
 {
     int num = 0;
     FILE *fptr;
+    char *cwd;
+    char buffer[1024];
 
-    // Write PID of daemon at the beginning
+    // Write PID of daemon in the beginning
     fptr = fopen(output_file_path, "a");
     if (fptr == NULL)
     {
         return EXIT_FAILURE;
     }
 
-    fprintf(fptr, "Daemon started with PID %d\n", getpid());
+    fprintf(fptr, "Daemon process running with PID: %d, PPID: %d, opening logfile with FD %d\n", getpid(), getppid(), fileno(fptr));
+
+    // Then write cwd
+    cwd = getcwd(buffer, sizeof(buffer));
+    if (cwd == NULL)
+    {
+        perror("getcwd() error");
+        return 1;
+    }
+
+    fprintf(fptr, "Current working directory: %s\n", cwd);
     fclose(fptr);
 
     while (1)
@@ -99,18 +57,19 @@ static int daemon_work()
 
         sleep(10);
 
-        if (num == 10) // Terminate after 10 iterations
+        if (num == 10) // We just let this process terminate after 10 counts
             break;
     }
 
     return EXIT_SUCCESS;
 }
 
-
-
-int main(int argc, char **args)
+int main()
 {
-    // Setup path to the log file
+    pid_t pid, sid; //process id, session id
+    int i;
+
+    // Setup path
     if (getcwd(output_file_path, sizeof(output_file_path)) == NULL)
     {
         perror("getcwd() error, exiting now.");
@@ -118,18 +77,77 @@ int main(int argc, char **args)
     }
     strcat(output_file_path, "/dspawn.log");
 
-    // Create daemon process
-    if (create_daemon() < 0)
+    // Fork the parent process
+    pid = fork();
+    if (pid < 0)
     {
-        perror("Failed to create daemon");
-        return 1;
+        perror("First fork failed\n");
+        exit(EXIT_FAILURE);
     }
 
-    // Open the log file and log daemon start message
-    openlog("summond", LOG_PID, LOG_DAEMON);
-    syslog(LOG_NOTICE, "Daemon started.");
-    closelog();
+    // If we got a good PID, then we can exit the parent process
+    if (pid > 0)
+    {
+        exit(EXIT_SUCCESS);
+    }
 
-    // Start the daemon work
-    return daemon_work();
+    // At this point we are executing as the child process (intermediate process)
+    // Create a new session
+    sid = setsid(); //becomes new session leader, loses controlling TTY - setsid() syscall
+    if (sid < 0)
+    {
+        perror("setsid failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Ignore SIGCHLD and SIGHUP
+    signal(SIGCHLD, SIG_IGN);
+    signal(SIGHUP, SIG_IGN);
+
+    // Fork off for the second time
+    pid = fork();
+    if (pid < 0)
+    {
+        perror("Second fork failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // If we got a good PID, then we can exit the parent process
+    if (pid > 0)
+    {
+        exit(EXIT_SUCCESS);
+    }
+
+    // At this point we are executing as the grandchild (daemon) process
+    printf("\n -> Daemon process created successfully\n");
+
+    // Change the file mode mask
+    umask(0);
+
+    // Change the working directory to the root directory
+    if ((chdir("/")) < 0)
+    {
+        perror("chdir failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Close all open file descriptors
+    for (i = sysconf(_SC_OPEN_MAX); i >= 0; i--)
+    {
+        close(i);
+    }
+
+    // Redirect file descriptors 0, 1, 2 to /dev/null
+    open("/dev/null", O_RDWR); // stdin
+    dup(0); // stdout
+    dup(0); // stderr
+
+    // Execute the daemon work
+    if (daemon_work() != EXIT_SUCCESS)
+    {
+        perror("daemon_work failed");
+        exit(EXIT_FAILURE);
+    }
+
+    return EXIT_SUCCESS;
 }
