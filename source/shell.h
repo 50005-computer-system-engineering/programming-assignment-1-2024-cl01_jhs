@@ -9,6 +9,7 @@
 #include <sys/wait.h>
 #include <limits.h>
 #include <pwd.h>
+#include <sys/resource.h>
 
 // Maximum length of a command line
 #define MAX_LINE 1024
