@@ -123,3 +123,7 @@ Color scheme set to dark
 Improved Accessibility: Users with visual impairments or preferences for certain text sizes and colors will find the shell easier to use.
 Enhanced Comfort: Customization options will make prolonged use of the shell more comfortable, reducing fatigue and improving productivity.
 Inclusivity: By accommodating different needs and preferences, the shell becomes more inclusive and user-friendly for a wider audience.
+
+##Future Suggestions : 
+1. Sustainability: Implement more energy-efficient algorithms and further optimize resource usage for various commands.
+2. Inclusivity: Add more customization options, including support for different languages and enhanced accessibility features.
