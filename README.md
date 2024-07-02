@@ -32,24 +32,36 @@ The shell supports several features :
 ## Built in functions like : 
 
 cd <directory_name>: Changes the current working directory.
+
 help: Displays the list of built-in commands.
+
 exit: Exits the shell.
+
 usage <command>: Provides usage information for a specific command.
+
 env: Lists all registered environment variables.
+
 setenv KEY=VALUE: Sets a new environment variable.
+
 unsetenv KEY: Removes an environment variable.
 
 ## System Programs
+
 find.c - Searches for files in a directory.
-ld.c - Lists the contents of the current directory.
+
+ld.c - Lists the contents of the current directory.\
+
 ldr.c - Lists the contents of the current directory recursively.
+
 dspawn.c - Spawns a daemon process that logs messages to a file periodically.
+
 dcheck.c - Checks if the daemon process is running and reports its status.
+
 sys.c - Displays system information such as user, system, memory, and CPU details.
+
 backup.c - Creates a zip archive of the directory specified by the BACKUP_DIR environment variable and moves it to the archive directory.
 
 Each program can be executed from the CSEShell once it is running. This starter code only allows the shell to execute a command once before exiting because `execv` replace the entire process' address space. Students need to fix this and allow the shell to prompt for more commands in Programming Assignment 1.
-
 
 ## Additional Functions
 
