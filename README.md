@@ -107,6 +107,11 @@ Resource Usage:
 - Disk I/O: 1 read, 0 writes
 ```
 
+Example :
+
+![image](https://github.com/50005-computer-system-engineering/programming-assignment-1-2024-cl01_jhs/assets/140350660/5416dc41-e265-4172-b1a9-9e6313710180)
+
+
 ## Inclusivity Idea: Customizable Interface
 ### Customizable Appearance and Behavior:
 
