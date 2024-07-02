@@ -65,4 +65,61 @@ backup.c - Creates a zip archive of the directory specified by the BACKUP_DIR en
 
 ## Additional Functions
 
-## Sustainability and inlcusivit
+## Sustainability Idea: Resource Usage Feedback
+
+### Enhancing the Shell with Resource Statistics:
+
+Purpose: This feature aims to make users aware of how much system resources their commands consume.
+
+How it works: After each command is executed, the shell will display detailed statistics about:
+
+CPU Time: How much processing power the command used.
+
+Memory Usage: The amount of RAM the command required.
+
+Disk I/O: The read and write operations performed on the disk.
+
+Benefits: Users will be able to see the impact of their commands on system resources, encouraging more efficient usage and promoting overall sustainability.
+
+### Displaying Resource Usage Feedback:
+
+Purpose: To give users immediate feedback on the resource consumption of their commands.
+
+How it works: After running a command, the shell will automatically show a summary of resource usage.
+
+```bash
+$$ ls
+file1.txt  file2.txt  file3.txt
+Resource Usage:
+- CPU Time: 0.001 seconds
+- Memory Usage: 2 MB
+- Disk I/O: 1 read, 0 writes
+```
+
+## Inclusivity Idea: Customizable Interface
+### Customizable Appearance and Behavior:
+
+Purpose: To make the shell more accessible and comfortable for a diverse range of users.
+
+Features:
+
+Change Text Size: Users can adjust the size of the text in the shell to suit their preferences.
+
+Color Schemes: Users can choose from various color schemes to enhance readability and reduce eye strain.
+
+How it works: Users will be able to customize these settings through simple shell commands or configuration files.
+
+Example Commands:
+```bash
+$$ set text_size 16
+Text size set to 16
+
+$$ set color_scheme dark
+Color scheme set to dark
+```
+
+## Benefits:
+
+Improved Accessibility: Users with visual impairments or preferences for certain text sizes and colors will find the shell easier to use.
+Enhanced Comfort: Customization options will make prolonged use of the shell more comfortable, reducing fatigue and improving productivity.
+Inclusivity: By accommodating different needs and preferences, the shell becomes more inclusive and user-friendly for a wider audience.
