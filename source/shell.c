@@ -350,112 +350,93 @@ void print_resource_usage() {
 // The main function where the shell's execution begins
 int main(void)
 {
-    // Define an array to hold the command and its arguments
     char *cmd[MAX_ARGS];
-    int child_status;
+    int status;
 
     readrc();
 
-    
-    pid_t pid;
 
+    // Get the initial working directory
+    char initial_cwd[PATH_MAX];
+    if (getcwd(initial_cwd, sizeof(initial_cwd)) == NULL)
+    {
+        perror("getcwd");
+        exit(1);
+    }
 
-    // Move cwd declaration outside the if block
-    char cwd[1024]; // Current working directory
+    do
+    {
+        type_prompt();
+        read_command(cmd);
 
-    while (1) // Infinite loop
-    { 
-        type_prompt();     // Display the prompt
-        read_command(cmd); // Read a command from the user
-
-        // If the command is empty, skip execution
         if (cmd[0] == NULL)
+        {
             continue;
+        }
 
-        // Check if the command is a built-in command
         int is_builtin = 0;
         for (int i = 0; i < num_builtin_functions(); i++)
         {
             if (strcmp(cmd[0], builtin_commands[i]) == 0)
             {
-                is_builtin = 1;
-                if ((*builtin_command_func[i])(cmd) == 0)
-                {
-                    return 0; // Exit the shell
+                if (strcmp(cmd[0], "history") == 0) {
+                    show_history();
+                    is_builtin = 1;
+                    break;
                 }
+
+                status = (*builtin_command_func[i])(cmd);
+                is_builtin = 1;
                 break;
             }
         }
 
-        // If the command is not a built-in, execute it
         if (!is_builtin)
         {
-            // Formulate the full path of the command to be executed
-            char full_path[PATH_MAX];
-            if (getcwd(cwd, sizeof(cwd)) != NULL)
+            pid_t pid = fork();
+            if (pid < 0)
             {
-                snprintf(full_path, sizeof(full_path), "%s/bin/%s", cwd, cmd[0]);
-            }
-            else
-            {
-                printf("Failed to get current working directory.");
+                perror("fork failed");
                 exit(1);
             }
-
-            ////////////////////////////////////////////////////////////
-            // Fork the shell process and execv in child process
-            pid = fork();
-            // printf("pid: %d\n", pid);
-
-            if (pid == 0) // Child process
+            if (pid == 0)
             {
-                execv(full_path, cmd);
-
-                // If execv returns, command execution has failed
-                printf("Command %s not found\n", cmd[0]);
-                exit(1);
-            }
-            else if (pid > 0) //Parent process
-            {
-                pid_t waited_pid = waitpid(pid, &child_status, WUNTRACED); 
-                // waitpid(pid, *status, options) system call: wait until a child specified by pid argument has changed state.
-                // wait(*status) system call: wait until one of its children terminates.
-                if (waited_pid == -1)
+                char full_path[PATH_MAX];
+                char cwd[1024];
+                if (getcwd(cwd, sizeof(cwd)) != NULL)
                 {
-                    perror("waitpid failed");
+                    char full_path[PATH_MAX];
+                    snprintf(full_path, sizeof(full_path), "%s/source/system_programs/%s", initial_cwd, cmd[0]);
+                    printf("Trying to execute: %s\n", full_path); // Debug print
+                    execv(full_path, cmd);
+                    perror("execv");
                     exit(1);
                 }
-
-                // Inspect the child's exit status
-                if (WIFEXITED(child_status))
+                else
                 {
-                    int child_exit_status = WEXITSTATUS(child_status);
-                    if (child_exit_status == 0)
-                    {
-                        printf("Child process exited successfully\n");
-                    }
-                    else
-                    {
-                        printf("Child process exited with status %d\n", child_exit_status);
-                        // Print resource usage after the child process has exited
-                        print_resource_usage();
-                    }
+                    printf("Failed to get current working directory.");
                 }
+                exit(1);
             }
             else
             {
-                printf("Failed to fork process.\n");
-                exit(1);
+                waitpid(pid, &status, 0);
+                if (WIFEXITED(status))
+                {
+                    int exit_status = WEXITSTATUS(status);
+                    printf("Child process exited with status %d\n", exit_status);
+                    // Print resource usage after the child process has exited
+                    print_resource_usage();
+                }
             }
-            ////////////////////////////////////////////////////////
         }
 
-        // Free the allocated memory for the command arguments before exiting
         for (int i = 0; cmd[i] != NULL; i++)
         {
             free(cmd[i]);
         }
-        memset(cwd, '\0', sizeof(cwd)); // clear the cwd array
-    }
+    } while (status);
+
     return 0;
 }
+
