@@ -1,6 +1,7 @@
 #include "shell.h"
 #include <time.h>
 #include <unistd.h>
+#include <sys/resource.h>
 
 
 // Function to read a command from the user input
