@@ -27,6 +27,8 @@ void read_command(char **cmd)
     if (count == 1)
         return;
 
+    add_to_history(line); // add this command to history 
+
     command_token = strtok(line, " \n");
 
     while (command_token != NULL)
@@ -208,6 +210,26 @@ int set_env_var(char **args)
     return 1;
 }
 
+void print_resource_usage() {
+    struct rusage usage;
+    if (getrusage(RUSAGE_CHILDREN, &usage) == 0) {
+        printf("\nResource Usage:\n");
+        printf("CPU Time:\n");
+        printf("  User CPU time used: %ld.%06ld seconds\n", usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
+        printf("  System CPU time used: %ld.%06ld seconds\n", usage.ru_stime.tv_sec, usage.ru_stime.tv_usec);
+        
+        printf("Memory Usage:\n");
+        printf("  Maximum resident set size: %ld KB\n", usage.ru_maxrss);
+        
+        printf("Disk I/O:\n");
+        printf("  Block input operations: %ld\n", usage.ru_inblock);
+        printf("  Block output operations: %ld\n", usage.ru_oublock);
+    } else {
+        perror("getrusage");
+    }
+}
+
+
 
 
 // Handler for the 'unsetenv' command
@@ -328,6 +350,11 @@ int readrc()
 
 
 
+
+
+
+
+
 // The main function where the shell's execution begins
 int main(void)
 {
@@ -418,8 +445,11 @@ int main(void)
                     else
                     {
                         printf("Child process exited with status %d\n", child_exit_status);
+                        print_resource_usage();
                         // Print resource usage after the child process has exited
                         //print_resource_usage();
+                        // Print resource usage after the child process has exited
+                        
                     }
                 }
             }
@@ -434,11 +464,15 @@ int main(void)
         // Free the allocated memory for the command arguments before exiting
         for (int i = 0; cmd[i] != NULL; i++)
         {
+            print_resource_usage();
             free(cmd[i]);
         }
         memset(cwd, '\0', sizeof(cwd)); // clear the cwd array
     }
     return 0;
 }
+
+
+
 
 
