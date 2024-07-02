@@ -3,30 +3,18 @@
 
 CSEShell is a simple, custom shell for Unix-based systems, designed to provide an interface for executing system programs. This project includes a basic shell implementation, a set of system programs (`find`, `ld`, `ldr`), and some test files.
 
-## Directory Structure
+## Compiling and Running the shell 
 
-The project is organized as follows:
+After Cloning the repo, cd to the repo.
 
-- `bin/` - Contains compiled executables for system programs.
-  - `find` - Program to find files.
-  - `ld` - Program for listing the contents of the current directory.
-  - `ldr` - Program for listing the contents of the current directory recursively.
-- `cseshell` - The main executable for the CSEShell.
-- `files/` - Contains various test files used with the shell and system programs.
-  - `combined.txt`, `file1.txt`, `file2.txt`, ... - Test text files.
-  - `notes.pdf` - A PDF file for testing.
-  - `ss.png` - An image file.
-- `makefile` - Makefile for building the CSEShell and system programs.
-- `source/` - Source code for the shell and system programs.
-  - `shell.c` and `shell.h` - Source and header files for the shell.
-  - `system_programs/` - Source code and header for the system programs.
-
-## Building the Project
-
-To build the CSEShell and system programs, run the following command in the root directory:
+The Makefile contains rules for compiling the shell and system programs. You can clean the build by running:
 
 ```bash
 make
+```
+
+```bash
+make clean
 ```
 
 This will compile the source code and place the executable files in the appropriate directories.
@@ -39,28 +27,30 @@ After building, you can start the shell by running:
 ./cseshell
 ```
 
-From there, you can execute built-in commands and any of the included system programs (e.g., `find`, `ld`, `ldr`).
+The shell supports several features : 
+
+## Built in functions like : 
+
+cd <directory_name>: Changes the current working directory.
+help: Displays the list of built-in commands.
+exit: Exits the shell.
+usage <command>: Provides usage information for a specific command.
+env: Lists all registered environment variables.
+setenv KEY=VALUE: Sets a new environment variable.
+unsetenv KEY: Removes an environment variable.
 
 ## System Programs
-
-- `find.c` - Searches for files in a directory.
-- `ld.c` - List the contents of the curent directory.
-- `ldr.c` - List the contents of the current directory recursively.
+find.c - Searches for files in a directory.
+ld.c - Lists the contents of the current directory.
+ldr.c - Lists the contents of the current directory recursively.
+dspawn.c - Spawns a daemon process that logs messages to a file periodically.
+dcheck.c - Checks if the daemon process is running and reports its status.
+sys.c - Displays system information such as user, system, memory, and CPU details.
+backup.c - Creates a zip archive of the directory specified by the BACKUP_DIR environment variable and moves it to the archive directory.
 
 Each program can be executed from the CSEShell once it is running. This starter code only allows the shell to execute a command once before exiting because `execv` replace the entire process' address space. Students need to fix this and allow the shell to prompt for more commands in Programming Assignment 1.
 
-## Files Directory
 
-The `files/` directory contains various text, PDF, and image files for testing the functionality of the CSEShell and its system programs.
+## Additional Functions
 
-## Makefile
-
-The Makefile contains rules for compiling the shell and system programs. You can clean the build by running:
-
-```bash
-make clean
-```
-
-## Source Directory
-
-Contains all the necessary source code for the shell and system programs. It is divided into the shell implementation (`shell.c`, `shell.h`) and system programs (`system_programs/`).
+## Sustainability and inlcusivit
