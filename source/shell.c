@@ -379,7 +379,7 @@ int main(void)
         {
             if (strcmp(cmd[0], builtin_commands[i]) == 0)
             {
-                if (strcmp(cmd[0], "history") == 0) {
+                if (strcmp(cmd[0],"history") == 0) {
                     show_history();
                     is_builtin = 1;
                     break;
