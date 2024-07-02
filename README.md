@@ -61,7 +61,7 @@ sys.c - Displays system information such as user, system, memory, and CPU detail
 
 backup.c - Creates a zip archive of the directory specified by the BACKUP_DIR environment variable and moves it to the archive directory.
 
-Each program can be executed from the CSEShell once it is running. This starter code only allows the shell to execute a command once before exiting because `execv` replace the entire process' address space. Students need to fix this and allow the shell to prompt for more commands in Programming Assignment 1.
+
 
 ## Additional Functions
 
